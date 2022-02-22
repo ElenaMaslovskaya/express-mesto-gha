@@ -42,7 +42,7 @@ module.exports.getCurrentUser = (req, res) => {
 };
 
 module.exports.updateUserInfo = (req, res) => {
-  const { name, about } = req.body;
+  const { name = null, about = null } = req.body;
 
   User.findByIdAndUpdate(
     req.user._id,
