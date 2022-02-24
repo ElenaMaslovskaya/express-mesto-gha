@@ -9,28 +9,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "lint": "npx eslint ."
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "devDependencies": {
     "eslint": "^8.2.0",
@@ -48,7 +27,7 @@
   "author": "Elena Maslovskaya",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ElenaMaslovskaya/express-mesto/issues"
+    "url": "https://github.com/ElenaMaslovskaya/express-mesto-gha/issues"
   },
-  "homepage": "https://github.com/ElenaMaslovskaya/express-mesto#readme"
+  "homepage": "https://github.com/ElenaMaslovskaya/express-mesto-gha#readme"
 }
