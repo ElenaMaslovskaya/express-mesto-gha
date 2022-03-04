@@ -1,8 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const routerUser = require('./routes/users');
-const routerCard = require('./routes/cards');
+require('dotenv').config();
+
+const { login, createUser } = require('./controllers/users');
+const users = require('./routes/users');
+const cards = require('./routes/cards');
+const auth = require('./middlewares/auth');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 
@@ -12,20 +18,32 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
 });
 
+app.use(cookieParser());
 app.use(bodyParser.json());
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '62112340e926a18cf9113dad', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
+// роуты, не требующие авторизации,
+// например, регистрация и логин
+app.post('/signup', createUser);
+app.post('/signin', login);
 
-  next();
+// авторизация
+app.use(auth);
+
+// роуты, которым авторизация нужна
+app.use('/', auth, users);
+app.post('/', auth, cards);
+
+app.use('*', (req, res) => {
+  throw new NotFoundError({ message: 'Страница не найдена' });
 });
 
-app.use(routerUser);
-app.use(routerCard);
-app.use('*', (req, res) => {
-  res.status(404).send({ message: 'Страница не найдена' });
+app.use((err, req, res, next) => {
+  if (err.status) {
+    res.status(err.status).send(err.message);
+    return;
+  }
+  res.status(500).send({ message: `На сервере произошла ошибка: ${err.message}` });
+  next();
 });
 
 app.listen(PORT, () => {
