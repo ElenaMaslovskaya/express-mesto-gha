@@ -5,6 +5,7 @@ const BadRequestError = require('../errors/BadRequestError');
 const ConflictError = require('../errors/ConflictError');
 const NotFoundError = require('../errors/NotFoundError');
 const ServerError = require('../errors/ServerError');
+const UnauthorizedError = require('../errors/UnauthorizedError');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -25,19 +26,14 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
+    .then((user) => res.status(201).send({ data: user }))
     .catch((err) => {
       if (err.name === 'MongoError' || err.code === 11000) {
-        throw new ConflictError({ message: 'Пользователь с таким email уже зарегистрирован' });
-      } else next(err);
+        next(new ConflictError({ message: 'Пользователь с таким email уже зарегистрирован' }));
+      } else {
+        next(err);
+      }
     })
-    .then((user) => res.status(201).send({
-      data: {
-        name: user.name,
-        about: user.about,
-        avatar,
-        email: user.email,
-      },
-    }))
     .catch(next);
 };
 
@@ -128,6 +124,10 @@ module.exports.login = (req, res, next) => {
           sameSite: true,
         })
         .send({ message: 'Успешная авторизация' });
+    })
+    .catch((err) => {
+      // ошибка аутентификации
+      throw new UnauthorizedError({ message: err.message });
     })
     .catch(next);
 };

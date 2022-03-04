@@ -7,7 +7,11 @@ const ServerError = require('../errors/ServerError');
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
 
-  Card.create({ name, link, owner: req.user._id })
+  Card.create({
+    name,
+    link,
+    owner: req.user._id,
+  })
     .catch((err) => {
       throw new BadRequestError({ message: `Указаны некорректные данные при создании карточки: ${err.message}` });
     })
