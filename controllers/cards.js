@@ -12,8 +12,8 @@ module.exports.createCard = (req, res, next) => {
     link,
     owner: req.user._id,
   })
-    .catch((err) => {
-      throw new BadRequestError({ message: `Указаны некорректные данные при создании карточки: ${err.message}` });
+    .catch(() => {
+      throw new BadRequestError({ message: 'Указаны некорректные данные при создании карточки' });
     })
     .then((card) => res.status(201).send({ data: card }))
     .catch(next);
@@ -22,7 +22,7 @@ module.exports.createCard = (req, res, next) => {
 module.exports.getCards = (req, res) => {
   Card.find({})
     .populate('user')
-    .then((data) => res.status(200).send(data))
+    .then((cards) => res.status(200).send({ data: cards }))
     .catch(() => {
       throw new ServerError({ message: 'Произошла ошибка сервера' });
     });
@@ -32,7 +32,7 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(req.params._id)
     .orFail()
     .catch(() => {
-      throw new NotFoundError({ message: 'Нет карточки с таким id' });
+      throw new NotFoundError({ message: 'Карточка не найдена' });
     })
     .then((card) => {
       if (card.owner.toString() !== req.user._id) {

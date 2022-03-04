@@ -4,13 +4,14 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
+const { validateUser, validateLogin } = require('./middlewares/validations');
 const users = require('./routes/users');
 const cards = require('./routes/cards');
 const auth = require('./middlewares/auth');
 const NotFoundError = require('./errors/NotFoundError');
+require('dotenv').config();
 
 const { PORT = 3000 } = process.env;
 
@@ -20,6 +21,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
 });
 
+app.use(helmet());
 app.use(cookieParser());
 app.use(bodyParser.json());
 
@@ -31,12 +33,10 @@ const limiter = rateLimit({
 // подключаем rate-limiter
 app.use(limiter);
 
-app.use(helmet());
-
 // роуты, не требующие авторизации,
 // например, регистрация и логин
-app.post('/signup', createUser);
-app.post('/signin', login);
+app.post('/signup', validateUser, createUser);
+app.post('/signin', validateLogin, login);
 
 // авторизация
 app.use(auth);

@@ -4,7 +4,6 @@ const User = require('../models/user');
 const BadRequestError = require('../errors/BadRequestError');
 const ConflictError = require('../errors/ConflictError');
 const NotFoundError = require('../errors/NotFoundError');
-const ServerError = require('../errors/ServerError');
 const UnauthorizedError = require('../errors/UnauthorizedError');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
@@ -40,23 +39,17 @@ module.exports.createUser = (req, res, next) => {
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.status(200).send({ data: users }))
-    .catch((next));
+    .catch(next);
 };
 
 module.exports.getCurrentUser = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail(() => {
+    .orFail()
+    .catch(() => {
       throw new NotFoundError({ message: 'Запрашиваемый пользователь не найден' });
     })
     .then((user) => {
       res.status(200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        throw new NotFoundError({ message: 'Переданы некорректные данные' });
-      } else {
-        throw new ServerError({ message: 'Произошла ошибка сервера' });
-      }
     })
     .catch(next);
 };
@@ -72,9 +65,9 @@ module.exports.updateUserInfo = (req, res, next) => {
     .orFail(() => new NotFoundError({ message: 'Запрашиваемый пользователь не найден' }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new BadRequestError({ message: 'Переданы некорректные данные' });
+        next(new BadRequestError({ message: 'Переданы некорректные данные' }));
       } else {
-        throw new ServerError({ message: 'Произошла ошибка сервера' });
+        next(err);
       }
     })
     .then((user) => {
@@ -94,9 +87,9 @@ module.exports.updateUserAvatar = (req, res, next) => {
     .orFail(() => new NotFoundError({ message: 'Запрашиваемый пользователь не найден' }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new BadRequestError({ message: 'Переданы некорректные данные' });
+        next(new BadRequestError({ message: 'Переданы некорректные данные' }));
       } else {
-        throw new ServerError({ message: 'Произошла ошибка сервера' });
+        next(err);
       }
     })
     .then((user) => {
