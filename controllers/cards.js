@@ -12,11 +12,14 @@ module.exports.createCard = (req, res, next) => {
     link,
     owner: req.user._id,
   })
-    .catch(() => {
-      throw new BadRequestError({ message: 'Указаны некорректные данные при создании карточки' });
-    })
     .then((card) => res.status(201).send({ data: card }))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError({ message: 'Указаны некорректные данные при создании карточки' }));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.getCards = (req, res) => {
@@ -29,16 +32,13 @@ module.exports.getCards = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  Card.findById(req.params._id)
-    .orFail()
-    .catch(() => {
-      throw new NotFoundError({ message: 'Карточка не найдена' });
-    })
+  Card.findById(req.params.cardId)
+    .orFail(() => new NotFoundError({ message: 'Карточка не найдена' }))
     .then((card) => {
       if (card.owner.toString() !== req.user._id) {
         throw new ForbiddenError({ message: 'Недостаточно прав для выполнения операции' });
       }
-      Card.findByIdAndDelete(req.params._id)
+      Card.findByIdAndDelete(req.params.cardId)
         .then((cardData) => {
           res.send({ data: cardData });
         })
@@ -53,10 +53,7 @@ module.exports.likeCard = (req, res, next) => {
     { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
     { new: true },
   )
-    .orFail()
-    .catch(() => {
-      throw new NotFoundError({ message: 'Карточка не найдена' });
-    })
+    .orFail(() => new NotFoundError({ message: 'Карточка не найдена' }))
     .then((likes) => res.send({ data: likes }))
     .catch(next);
 };
@@ -67,10 +64,7 @@ module.exports.dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } }, // убрать _id из массива
     { new: true },
   )
-    .orFail()
-    .catch(() => {
-      throw new NotFoundError({ message: 'Карточка не найдена' });
-    })
+    .orFail(() => new NotFoundError({ message: 'Карточка не найдена' }))
     .then((likes) => res.send({ data: likes }))
     .catch(next);
 };
