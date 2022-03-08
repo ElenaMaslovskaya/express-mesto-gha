@@ -42,18 +42,18 @@ app.post('/signin', validateLogin, login);
 app.use(auth);
 
 // роуты, которым авторизация нужна
-app.use('/', auth, users);
-app.post('/', auth, cards);
+app.use('/', users);
+app.use('/', cards);
 
 app.use(() => {
-  throw new NotFoundError({ message: 'Страница не найдена' });
+  throw new NotFoundError('Страница не найдена');
 });
 
 app.use(errors());
 
 app.use((err, req, res, next) => {
-  if (err.status) {
-    res.status(err.status).send(err.message);
+  if (err.statusCode) {
+    res.status(err.statusCode).send({ message: err.message });
     return;
   }
   res.status(500).send({ message: `На сервере произошла ошибка: ${err.message}` });

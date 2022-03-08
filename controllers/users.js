@@ -25,18 +25,25 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(201).send({ data: user }))
+    .then((user) => res.status(201).send({
+      data:
+      {
+        name: user.name,
+        about: user.about,
+        avatar,
+        email: user.email,
+      },
+    }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError({ message: 'Указаны некорректные данные при создании пользователя' }));
+        next(new BadRequestError('Указаны некорректные данные при создании пользователя'));
       }
       if (err.name === 'MongoError' || err.code === 11000) {
-        next(new ConflictError({ message: 'Пользователь с таким email уже зарегистрирован' }));
+        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
       } else {
         next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.getUsers = (req, res, next) => {
@@ -47,33 +54,49 @@ module.exports.getUsers = (req, res, next) => {
 
 module.exports.getCurrentUser = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail(() => new NotFoundError({ message: 'Запрашиваемый пользователь не найден' }))
+    .orFail(() => new NotFoundError('Запрашиваемый пользователь не найден'))
     .then((user) => {
       res.status(200).send({ data: user });
     })
     .catch(next);
 };
 
+module.exports.getUserById = (req, res, next) => {
+  User.findById(req.params.id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь по указанному id не найден');
+      }
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
+};
+
 module.exports.updateUserInfo = (req, res, next) => {
-  const { name = null, about = null } = req.body;
+  const { name, about } = req.body;
 
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
     { new: true, runValidators: true },
   )
-    .orFail(() => new NotFoundError({ message: 'Запрашиваемый пользователь не найден' }))
+    .orFail(() => new NotFoundError('Запрашиваемый пользователь не найден'))
     .then((user) => {
       res.status(200).send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError({ message: 'Переданы некорректные данные' }));
+        next(new BadRequestError('Переданы некорректные данные'));
       } else {
         next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.updateUserAvatar = (req, res, next) => {
@@ -84,18 +107,17 @@ module.exports.updateUserAvatar = (req, res, next) => {
     { avatar },
     { new: true, runValidators: true },
   )
-    .orFail(() => new NotFoundError({ message: 'Запрашиваемый пользователь не найден' }))
+    .orFail(() => new NotFoundError('Запрашиваемый пользователь не найден'))
     .then((user) => {
       res.status(200).send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError({ message: 'Переданы некорректные данные' }));
+        next(new BadRequestError('Переданы некорректные данные'));
       } else {
         next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports.login = (req, res, next) => {
@@ -120,7 +142,7 @@ module.exports.login = (req, res, next) => {
     })
     .catch((err) => {
       // ошибка аутентификации
-      throw new UnauthorizedError({ message: err.message });
+      throw new UnauthorizedError(err.message);
     })
     .catch(next);
 };
